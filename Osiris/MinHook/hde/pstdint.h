@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <windows.h>
+#include <Windows.h>
 
 // Integer types for HDE.
 typedef INT8   int8_t;

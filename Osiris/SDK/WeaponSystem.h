@@ -5,7 +5,8 @@
 enum class WeaponId : short;
 struct WeaponInfo;
 
-class WeaponSystem {
+class WeaponSystem
+{
 public:
-    VIRTUAL_METHOD(WeaponInfo*, getWeaponInfo, 2, (WeaponId weaponId), (this, weaponId))
+	VIRTUAL_METHOD(WeaponInfo*, getWeaponInfo, 2, (WeaponId weaponId), (this, weaponId));
 };

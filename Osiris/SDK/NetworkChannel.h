@@ -2,10 +2,11 @@
 
 #include "VirtualMethod.h"
 
-class NetworkChannel {
+class NetworkChannel
+{
 public:
-    VIRTUAL_METHOD(float, getLatency, 9, (int flow), (this, flow))
+	VIRTUAL_METHOD(float, getLatency, 9, (int flow), (this, flow));
 
-    std::byte pad[44];
-    int chokedPackets;
+	std::byte pad[44];
+	int chokedPackets;
 };

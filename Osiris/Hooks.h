@@ -29,36 +29,36 @@ using HookType = VmtSwap;
 class Hooks {
 public:
 #ifdef _WIN32
-    Hooks(HMODULE moduleHandle) noexcept;
+	Hooks(HMODULE moduleHandle) noexcept;
 
-    WNDPROC originalWndProc;
-    std::add_pointer_t<HRESULT __stdcall(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*)> originalPresent;
-    std::add_pointer_t<HRESULT __stdcall(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*)> originalReset;
+	WNDPROC originalWndProc;
+	std::add_pointer_t<HRESULT __stdcall(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*)> originalPresent;
+	std::add_pointer_t<HRESULT __stdcall(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*)> originalReset;
 #else
-    Hooks() noexcept;
+	Hooks() noexcept;
 
-    std::add_pointer_t<int(SDL_Event*)> pollEvent;
-    std::add_pointer_t<void(SDL_Window*)> swapWindow;
+	std::add_pointer_t<int(SDL_Event*)> pollEvent;
+	std::add_pointer_t<void(SDL_Window*)> swapWindow;
 #endif
 
-    void install() noexcept;
-    void uninstall() noexcept;
+	void install() noexcept;
+	void uninstall() noexcept;
 
-    std::add_pointer_t<int __FASTCALL(SoundInfo&)> originalDispatchSound;
+	std::add_pointer_t<int __FASTCALL(SoundInfo&)> originalDispatchSound;
 
-    HookType bspQuery;
-    HookType client;
-    HookType clientMode;
-    HookType engine;
-    HookType modelRender;
-    HookType sound;
-    HookType surface;
-    HookType viewRender;
-    HookType svCheats;
+	HookType bspQuery;
+	HookType client;
+	HookType clientMode;
+	HookType engine;
+	HookType modelRender;
+	HookType sound;
+	HookType surface;
+	HookType viewRender;
+	HookType svCheats;
 private:
 #ifdef _WIN32
-    HMODULE moduleHandle;
-    HWND window;
+	HMODULE moduleHandle;
+	HWND window;
 #endif
 };
 
