@@ -17,6 +17,11 @@ struct Color3;
 struct Color4;
 struct Vector;
 
+enum class LoadoutSlot
+{
+    None = 0, Primary, Secondary, Knife, Utility
+};
+
 namespace Helpers
 {
     unsigned int calculateColor(Color4 color) noexcept;
@@ -27,6 +32,8 @@ namespace Helpers
     void convertHSVtoRGB(float h, float s, float v, float& outR, float& outG, float& outB) noexcept;
     void healthColor(float fraction, float& outR, float& outG, float& outB) noexcept;
     unsigned int healthColor(float fraction) noexcept;
+
+    LoadoutSlot getLoadoutSlot(WeaponId weaponId) noexcept;
 
     constexpr auto units2meters(float units) noexcept
     {

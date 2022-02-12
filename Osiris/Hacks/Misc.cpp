@@ -481,7 +481,7 @@ void Misc::fastStop(UserCmd* cmd) noexcept
     Vector direction = velocity.toAngle();
     direction.y = cmd->viewangles.y - direction.y;
 
-    const auto negatedDirection = Vector::fromAngle(direction) * -speed;
+    const auto negatedDirection = Vector::fromAngle(direction) * (-speed);
     cmd->forwardmove = negatedDirection.x;
     cmd->sidemove = negatedDirection.y;
 }
@@ -532,7 +532,10 @@ void Misc::drawBombTimer() noexcept
             }
             ImGui::PopStyleColor();
         } else if (const auto defusingPlayer = GameData::playerByHandle(plantedC4.defuserHandle)) {
-            std::ostringstream ss; ss << defusingPlayer->name << " is defusing: " << std::fixed << std::showpoint << std::setprecision(3) << (std::max)(plantedC4.defuseCountDown - memory->globalVars->currenttime, 0.0f) << " s";
+            std::ostringstream ss;
+            ss << defusingPlayer->name << " is defusing: " << std::fixed
+                << std::showpoint << std::setprecision(3)
+                << (std::max)(plantedC4.defuseCountDown - memory->globalVars->currenttime, 0.0f) << " s";
 
             ImGui::textUnformattedCentered(ss.str().c_str());
 
@@ -839,7 +842,7 @@ void Misc::killSound(GameEvent& event) noexcept
     if (const auto localUserId = localPlayer->getUserId(); event.getInt("attacker") != localUserId || event.getInt("userid") == localUserId)
         return;
 
-    constexpr std::array killSounds{
+    constexpr std::array killSounds {
         "play physics/metal/metal_solid_impact_bullet2",
         "play buttons/arena_switch_press_02",
         "play training/timer_bell",
@@ -857,39 +860,22 @@ void Misc::purchaseList(GameEvent* event) noexcept
     static std::mutex mtx;
     std::scoped_lock _{ mtx };
 
-    struct PlayerPurchases {
-        int totalCost;
-        std::unordered_map<std::string, int> items;
-    };
-
-    static std::unordered_map<int, PlayerPurchases> playerPurchases;
-    static std::unordered_map<std::string, int> purchaseTotal;
-    static int totalCost;
-
+    static std::unordered_map<WeaponId, uint32_t> purchasedItems;
     static auto freezeEnd = 0.0f;
 
     if (event) {
         switch (fnv::hashRuntime(event->getName())) {
         case fnv::hash("item_purchase"): {
-            if (const auto player = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid"))); player && localPlayer && localPlayer->isOtherEnemy(player)) {
+            if (const auto player = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid"))); player && localPlayer) {
                 if (const auto definition = memory->itemSystem()->getItemSchema()->getItemDefinitionByName(event->getString("weapon"))) {
-                    auto& purchase = playerPurchases[player->handle()];
-                    if (const auto weaponInfo = memory->weaponSystem->getWeaponInfo(definition->getWeaponId())) {
-                        purchase.totalCost += weaponInfo->price;
-                        totalCost += weaponInfo->price;
-                    }
-                    const std::string weapon = interfaces->localize->findAsUTF8(definition->getItemBaseName());
-                    ++purchaseTotal[weapon];
-                    ++purchase.items[weapon];
+                    ++purchasedItems[definition->getWeaponId()];
                 }
             }
             break;
         }
         case fnv::hash("round_start"):
             freezeEnd = 0.0f;
-            playerPurchases.clear();
-            purchaseTotal.clear();
-            totalCost = 0;
+            purchasedItems.clear();
             break;
         case fnv::hash("round_freeze_end"):
             freezeEnd = memory->globalVars->realtime;
@@ -899,7 +885,11 @@ void Misc::purchaseList(GameEvent* event) noexcept
         if (!miscConfig.purchaseList.enabled)
             return;
 
-        if (static const auto mp_buytime = interfaces->cvar->findVar("mp_buytime"); (!interfaces->engine->isInGame() || freezeEnd != 0.0f && memory->globalVars->realtime > freezeEnd + (!miscConfig.purchaseList.onlyDuringFreezeTime ? mp_buytime->getFloat() : 0.0f) || playerPurchases.empty() || purchaseTotal.empty()) && !gui->isOpen())
+        if (static const auto mp_buytime = interfaces->cvar->findVar("mp_buytime");
+            (!interfaces->engine->isInGame() ||
+                freezeEnd != 0.0f && memory->globalVars->realtime > freezeEnd + (!miscConfig.purchaseList.onlyDuringFreezeTime ?
+                    mp_buytime->getFloat() :
+                    0.0f) || purchasedItems.empty()) && !gui->isOpen())
             return;
 
         ImGui::SetNextWindowSize({ 200.0f, 200.0f }, ImGuiCond_Once);
@@ -914,51 +904,45 @@ void Misc::purchaseList(GameEvent* event) noexcept
         ImGui::Begin("Purchases", nullptr, windowFlags);
         ImGui::PopStyleVar();
 
+        static const std::unordered_map<LoadoutSlot, ImU32> colors = {
+            { LoadoutSlot::None, IM_COL32(255, 255, 255, 255)},
+            { LoadoutSlot::Primary, IM_COL32(255, 0, 0, 255) },
+            { LoadoutSlot::Secondary, IM_COL32(255, 140, 0, 255) },
+            { LoadoutSlot::Knife, IM_COL32(255, 255, 255, 255) },
+            { LoadoutSlot::Utility, IM_COL32(0, 255, 0, 255) }
+        };
+
         if (miscConfig.purchaseList.mode == PurchaseList::Details) {
             GameData::Lock lock;
-            for (const auto& [handle, purchases] : playerPurchases) {
-                /*std::string s;
-                s.reserve(std::accumulate(purchases.items.begin(), purchases.items.end(), 0, [](int length, const auto& p) { return length + p.first.length() + 2; }));
-                for (const auto& purchasedItem : purchases.items) {
-                    if (purchasedItem.second > 1)
-                        s += std::to_string(purchasedItem.second) + "x ";
-                    s += purchasedItem.first + ", ";
-                }
+            constexpr std::array slots = {
+                LoadoutSlot::Primary, LoadoutSlot::Secondary, LoadoutSlot::Knife, LoadoutSlot::Utility, LoadoutSlot::None
+            };
 
-                if (s.length() >= 2)
-                    s.erase(s.length() - 2);*/
+            for (LoadoutSlot slot : slots) {
+                ImGui::PushStyleColor(ImGuiCol_Text, colors.at(slot));
+                for (const auto& [wepId, count] : purchasedItems) {
+                    if (Helpers::getLoadoutSlot(wepId) == slot) {
+                        EconItemDefinition* definition = memory->itemSystem()->getItemSchema()->getItemDefinitionInterface(wepId);
+                        std::string weaponName = interfaces->localize->findAsUTF8(definition->getItemBaseName());
 
-                if (const auto player = GameData::playerByHandle(handle)) {
-                    if (miscConfig.purchaseList.showPrices) {
-                        // TODO
-                        // ImGui::TextWrapped("%s $%d: %s", player->name.c_str(), purchases.totalCost, s.c_str());
-                    }
-                    else {
-                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
-                        ImGui::TextWrapped("%s", player->name.c_str());
-                        int i = 1;
-                        for (const auto& purchasedItem : purchases.items)
+                        if (slot == LoadoutSlot::None && weaponName.find("efuse") != std::string::npos) {
+                            ImGui::PopStyleColor();
+                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 191, 255, 255));
+                        }
+
+                        ImGui::TextWrapped("%s", weaponName.c_str());
+
+                        if (count > 1)
                         {
                             ImGui::SameLine();
-                            if (purchasedItem.second > 1)
-                            {
-                                ImGui::TextWrapped("%ix ", purchasedItem.second);
-                                ImGui::SameLine();
-                            }
 
-                            ImGui::TextWrapped("%s, ", purchasedItem.first);
+                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
+                            ImGui::TextWrapped("(%i)", count);
+                            ImGui::PopStyleColor();
                         }
-                        ImGui::PopStyleColor(i);
                     }
                 }
-            }
-        } else if (miscConfig.purchaseList.mode == PurchaseList::Summary) {
-            for (const auto& purchase : purchaseTotal)
-                ImGui::TextWrapped("%d x %s", purchase.second, purchase.first.c_str());
-
-            if (miscConfig.purchaseList.showPrices && totalCost > 0) {
-                ImGui::Separator();
-                ImGui::TextWrapped("Total: $%d", totalCost);
+                ImGui::PopStyleColor();
             }
         }
         ImGui::End();
@@ -1208,7 +1192,9 @@ void Misc::drawOffscreenEnemies(ImDrawList* drawList) noexcept
         const auto white = Helpers::calculateColor(255, 255, 255, 255);
         const auto background = Helpers::calculateColor(0, 0, 0, 80);
         const auto color = Helpers::calculateColor(miscConfig.offscreenEnemies.asColor4());
-        const auto healthBarColor = miscConfig.offscreenEnemies.healthBar.type == HealthBar::HealthBased ? Helpers::healthColor(std::clamp(player.health / 100.0f, 0.0f, 1.0f)) : Helpers::calculateColor(miscConfig.offscreenEnemies.healthBar.asColor4());
+        const auto healthBarColor = miscConfig.offscreenEnemies.healthBar.type == HealthBar::HealthBased ?
+            Helpers::healthColor(std::clamp(player.health / 100.0f, 0.0f, 1.0f)) :
+            Helpers::calculateColor(miscConfig.offscreenEnemies.healthBar.asColor4());
         Helpers::setAlphaFactor(1.0f);
 
         const ImVec2 trianglePoints[]{

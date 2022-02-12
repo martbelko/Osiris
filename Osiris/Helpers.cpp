@@ -33,6 +33,79 @@ static auto rainbowColor(float time, float speed, float alpha) noexcept
 
 static float alphaFactor = 1.0f;
 
+static const std::unordered_map<WeaponId, LoadoutSlot> weaponSlots = {
+    /* Knives */
+    { WeaponId::Knife, LoadoutSlot::Knife },
+    { WeaponId::KnifeT, LoadoutSlot::Knife },
+    { WeaponId::ClassicKnife, LoadoutSlot::Knife },
+    { WeaponId::GhostKnife, LoadoutSlot::Knife },
+    { WeaponId::GoldenKnife, LoadoutSlot::Knife },
+    { WeaponId::NomadKnife, LoadoutSlot::Knife },
+    { WeaponId::SkeletonKnife, LoadoutSlot::Knife },
+    { WeaponId::SurvivalKnife, LoadoutSlot::Knife },
+    { WeaponId::Gut, LoadoutSlot::Knife },
+    { WeaponId::Bayonet, LoadoutSlot::Knife },
+    { WeaponId::M9Bayonet, LoadoutSlot::Knife },
+    { WeaponId::Bowie, LoadoutSlot::Knife },
+    { WeaponId::Falchion, LoadoutSlot::Knife },
+    { WeaponId::Flip, LoadoutSlot::Knife },
+    { WeaponId::Huntsman, LoadoutSlot::Knife },
+    { WeaponId::Karambit, LoadoutSlot::Knife },
+    { WeaponId::Hammer, LoadoutSlot::Knife },
+    { WeaponId::Spanner, LoadoutSlot::Knife },
+    { WeaponId::Taser, LoadoutSlot::Knife },
+    /* Pistols */
+    { WeaponId::Glock, LoadoutSlot::Secondary },
+    { WeaponId::Usp_s, LoadoutSlot::Secondary },
+    { WeaponId::Hkp2000, LoadoutSlot::Secondary },
+    { WeaponId::P250, LoadoutSlot::Secondary },
+    { WeaponId::Elite, LoadoutSlot::Secondary },
+    { WeaponId::Fiveseven, LoadoutSlot::Secondary },
+    { WeaponId::Tec9, LoadoutSlot::Secondary },
+    { WeaponId::Cz75a, LoadoutSlot::Secondary },
+    { WeaponId::Cz75a, LoadoutSlot::Secondary },
+	{ WeaponId::Deagle, LoadoutSlot::Secondary },
+	{ WeaponId::Revolver, LoadoutSlot::Secondary },
+    /* Primary */
+    // Heavy
+    { WeaponId::Nova, LoadoutSlot::Primary },
+    { WeaponId::Xm1014, LoadoutSlot::Primary },
+    { WeaponId::Sawedoff, LoadoutSlot::Primary },
+    { WeaponId::Mag7, LoadoutSlot::Primary },
+    { WeaponId::Negev, LoadoutSlot::Primary },
+    { WeaponId::M249, LoadoutSlot::Primary },
+    // SMGs
+    { WeaponId::Mac10, LoadoutSlot::Primary },
+    { WeaponId::Mp9, LoadoutSlot::Primary },
+    { WeaponId::Mp7, LoadoutSlot::Primary },
+    { WeaponId::Mp5sd, LoadoutSlot::Primary },
+    { WeaponId::Ump45, LoadoutSlot::Primary },
+    { WeaponId::P90, LoadoutSlot::Primary },
+    { WeaponId::Bizon, LoadoutSlot::Primary },
+    // Rifles
+    { WeaponId::GalilAr, LoadoutSlot::Primary },
+    { WeaponId::Famas, LoadoutSlot::Primary },
+    { WeaponId::Ak47, LoadoutSlot::Primary },
+    { WeaponId::M4A1, LoadoutSlot::Primary },
+    { WeaponId::M4a1_s, LoadoutSlot::Primary },
+    { WeaponId::Sg553, LoadoutSlot::Primary },
+    { WeaponId::Aug, LoadoutSlot::Primary },
+    { WeaponId::Ssg08, LoadoutSlot::Primary },
+    { WeaponId::Awp, LoadoutSlot::Primary },
+    { WeaponId::G3SG1, LoadoutSlot::Primary },
+    { WeaponId::Scar20, LoadoutSlot::Primary },
+    // Utility
+    { WeaponId::FragGrenade, LoadoutSlot::Utility },
+    { WeaponId::SmokeGrenade, LoadoutSlot::Utility },
+    { WeaponId::Flashbang, LoadoutSlot::Utility },
+    { WeaponId::Molotov, LoadoutSlot::Utility },
+    { WeaponId::IncGrenade, LoadoutSlot::Utility },
+    { WeaponId::Firebomb, LoadoutSlot::Utility },
+    { WeaponId::TaGrenade, LoadoutSlot::Utility },
+    { WeaponId::Decoy, LoadoutSlot::Utility },
+    { WeaponId::Diversion, LoadoutSlot::Utility },
+};
+
 unsigned int Helpers::calculateColor(Color4 color) noexcept
 {
     color.color[3] *= alphaFactor;
@@ -73,6 +146,17 @@ void Helpers::healthColor(float fraction, float& outR, float& outG, float& outB)
     constexpr auto greenHue = 1.0f / 3.0f;
     constexpr auto redHue = 0.0f;
     convertHSVtoRGB(std::lerp(redHue, greenHue, fraction), 1.0f, 1.0f, outR, outG, outB);
+}
+
+LoadoutSlot Helpers::getLoadoutSlot(WeaponId weaponId) noexcept
+{
+    auto pair = weaponSlots.find(weaponId);
+    if (pair == weaponSlots.end())
+    {
+        return LoadoutSlot::None;
+    }
+
+    return pair->second;
 }
 
 unsigned int Helpers::healthColor(float fraction) noexcept
