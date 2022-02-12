@@ -257,7 +257,7 @@ void Misc::updateClanTag(bool tagChanged) noexcept
             clanTag.push_back(' ');
         return;
     }
-    
+
     static auto lastTime = 0.0f;
 
     if (miscConfig.clocktag) {
@@ -472,12 +472,12 @@ void Misc::fastStop(UserCmd* cmd) noexcept
 
     if (cmd->buttons & (UserCmd::IN_MOVELEFT | UserCmd::IN_MOVERIGHT | UserCmd::IN_FORWARD | UserCmd::IN_BACK))
         return;
-    
+
     const auto velocity = localPlayer->velocity();
     const auto speed = velocity.length2D();
     if (speed < 15.0f)
         return;
-    
+
     Vector direction = velocity.toAngle();
     direction.y = cmd->viewangles.y - direction.y;
 
@@ -492,7 +492,7 @@ void Misc::drawBombTimer() noexcept
         return;
 
     GameData::Lock lock;
-    
+
     const auto& plantedC4 = GameData::plantedC4();
     if (plantedC4.blowTime == 0.0f && !gui->isOpen())
         return;
@@ -916,9 +916,8 @@ void Misc::purchaseList(GameEvent* event) noexcept
 
         if (miscConfig.purchaseList.mode == PurchaseList::Details) {
             GameData::Lock lock;
-
             for (const auto& [handle, purchases] : playerPurchases) {
-                std::string s;
+                /*std::string s;
                 s.reserve(std::accumulate(purchases.items.begin(), purchases.items.end(), 0, [](int length, const auto& p) { return length + p.first.length() + 2; }));
                 for (const auto& purchasedItem : purchases.items) {
                     if (purchasedItem.second > 1)
@@ -927,13 +926,30 @@ void Misc::purchaseList(GameEvent* event) noexcept
                 }
 
                 if (s.length() >= 2)
-                    s.erase(s.length() - 2);
+                    s.erase(s.length() - 2);*/
 
                 if (const auto player = GameData::playerByHandle(handle)) {
-                    if (miscConfig.purchaseList.showPrices)
-                        ImGui::TextWrapped("%s $%d: %s", player->name.c_str(), purchases.totalCost, s.c_str());
-                    else
-                        ImGui::TextWrapped("%s: %s", player->name.c_str(), s.c_str());
+                    if (miscConfig.purchaseList.showPrices) {
+                        // TODO
+                        // ImGui::TextWrapped("%s $%d: %s", player->name.c_str(), purchases.totalCost, s.c_str());
+                    }
+                    else {
+                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+                        ImGui::TextWrapped("%s", player->name.c_str());
+                        int i = 1;
+                        for (const auto& purchasedItem : purchases.items)
+                        {
+                            ImGui::SameLine();
+                            if (purchasedItem.second > 1)
+                            {
+                                ImGui::TextWrapped("%ix ", purchasedItem.second);
+                                ImGui::SameLine();
+                            }
+
+                            ImGui::TextWrapped("%s, ", purchasedItem.first);
+                        }
+                        ImGui::PopStyleColor(i);
+                    }
                 }
             }
         } else if (miscConfig.purchaseList.mode == PurchaseList::Summary) {
@@ -1084,7 +1100,7 @@ void Misc::voteRevealer(GameEvent& event) noexcept
     const auto entity = interfaces->entityList->getEntity(event.getInt("entityid"));
     if (!entity || !entity->isPlayer())
         return;
-    
+
     const auto votedYes = event.getInt("vote_option") == 0;
     const auto isLocal = localPlayer && entity == localPlayer.get();
     const char color = votedYes ? '\x06' : '\x07';
