@@ -19,7 +19,7 @@ struct Vector;
 
 enum class LoadoutSlot
 {
-    None = 0, Primary, Secondary, Knife, Utility
+    None = 0, Primary, Secondary, Knife, Utility, Defuser
 };
 
 namespace Helpers

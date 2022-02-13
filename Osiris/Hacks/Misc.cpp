@@ -818,7 +818,7 @@ void Misc::playHitSound(GameEvent& event) noexcept
     if (const auto localUserId = localPlayer->getUserId(); event.getInt("attacker") != localUserId || event.getInt("userid") == localUserId)
         return;
 
-    constexpr std::array hitSounds{
+    constexpr std::array hitSounds {
         "play physics/metal/metal_solid_impact_bullet2",
         "play buttons/arena_switch_press_02",
         "play training/timer_bell",
@@ -866,7 +866,7 @@ void Misc::purchaseList(GameEvent* event) noexcept
     if (event) {
         switch (fnv::hashRuntime(event->getName())) {
         case fnv::hash("item_purchase"): {
-            if (const auto player = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid"))); player && localPlayer) {
+            if (const auto player = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid"))); player && localPlayer && localPlayer->isOtherEnemy(player)) {
                 if (const auto definition = memory->itemSystem()->getItemSchema()->getItemDefinitionByName(event->getString("weapon"))) {
                     ++purchasedItems[definition->getWeaponId()];
                 }
@@ -909,13 +909,14 @@ void Misc::purchaseList(GameEvent* event) noexcept
             { LoadoutSlot::Primary, IM_COL32(255, 0, 0, 255) },
             { LoadoutSlot::Secondary, IM_COL32(255, 140, 0, 255) },
             { LoadoutSlot::Knife, IM_COL32(255, 255, 255, 255) },
-            { LoadoutSlot::Utility, IM_COL32(0, 255, 0, 255) }
+            { LoadoutSlot::Utility, IM_COL32(0, 255, 0, 255) },
+            { LoadoutSlot::Defuser, IM_COL32(0, 191, 255, 255) }
         };
 
         if (miscConfig.purchaseList.mode == PurchaseList::Details) {
             GameData::Lock lock;
             constexpr std::array slots = {
-                LoadoutSlot::Primary, LoadoutSlot::Secondary, LoadoutSlot::Knife, LoadoutSlot::Utility, LoadoutSlot::None
+                LoadoutSlot::Primary, LoadoutSlot::Secondary, LoadoutSlot::Defuser, LoadoutSlot::Knife, LoadoutSlot::Utility, LoadoutSlot::None
             };
 
             for (LoadoutSlot slot : slots) {
@@ -925,13 +926,7 @@ void Misc::purchaseList(GameEvent* event) noexcept
                         EconItemDefinition* definition = memory->itemSystem()->getItemSchema()->getItemDefinitionInterface(wepId);
                         std::string weaponName = interfaces->localize->findAsUTF8(definition->getItemBaseName());
 
-                        if (slot == LoadoutSlot::None && weaponName.find("efuse") != std::string::npos) {
-                            ImGui::PopStyleColor();
-                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 191, 255, 255));
-                        }
-
                         ImGui::TextWrapped("%s", weaponName.c_str());
-
                         if (count > 1)
                         {
                             ImGui::SameLine();

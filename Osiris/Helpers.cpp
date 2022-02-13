@@ -21,6 +21,7 @@
 #include "Memory.h"
 #include "SDK/GlobalVars.h"
 #include "SDK/Engine.h"
+#include "SDK/ItemSchema.h"
 
 static auto rainbowColor(float time, float speed, float alpha) noexcept
 {
@@ -95,6 +96,7 @@ static const std::unordered_map<WeaponId, LoadoutSlot> weaponSlots = {
     { WeaponId::G3SG1, LoadoutSlot::Primary },
     { WeaponId::Scar20, LoadoutSlot::Primary },
     // Utility
+    { WeaponId::HeGrenade, LoadoutSlot::Utility },
     { WeaponId::FragGrenade, LoadoutSlot::Utility },
     { WeaponId::SmokeGrenade, LoadoutSlot::Utility },
     { WeaponId::Flashbang, LoadoutSlot::Utility },
@@ -103,7 +105,7 @@ static const std::unordered_map<WeaponId, LoadoutSlot> weaponSlots = {
     { WeaponId::Firebomb, LoadoutSlot::Utility },
     { WeaponId::TaGrenade, LoadoutSlot::Utility },
     { WeaponId::Decoy, LoadoutSlot::Utility },
-    { WeaponId::Diversion, LoadoutSlot::Utility },
+    { WeaponId::Diversion, LoadoutSlot::Utility }
 };
 
 unsigned int Helpers::calculateColor(Color4 color) noexcept
@@ -153,6 +155,13 @@ LoadoutSlot Helpers::getLoadoutSlot(WeaponId weaponId) noexcept
     auto pair = weaponSlots.find(weaponId);
     if (pair == weaponSlots.end())
     {
+        EconItemDefinition* definition = memory->itemSystem()->getItemSchema()->getItemDefinitionInterface(weaponId);
+        std::string defName = definition->getDefinitionName();
+        if (defName.find("defuse") != std::string::npos)
+        {
+            return LoadoutSlot::Defuser;
+        }
+
         return LoadoutSlot::None;
     }
 

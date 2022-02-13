@@ -69,6 +69,7 @@ struct VisualsConfig {
     int hitEffect{ 0 };
     float hitEffectTime{ 0.6f };
     int hitMarker{ 0 };
+    Color4 hitMarkerColor{ 1.0f, 1.0f, 1.0f, 1.0f };
     float hitMarkerTime{ 0.6f };
     BulletTracers bulletTracers;
     ColorToggle molotovHull{ 1.0f, 0.27f, 0.0f, 0.3f };
@@ -325,7 +326,7 @@ void Visuals::thirdperson() noexcept
         return;
 
     memory->input->isCameraInThirdPerson = (!visualsConfig.thirdpersonKey.isSet() || visualsConfig.thirdpersonKey.isToggled()) && localPlayer && localPlayer->isAlive();
-    memory->input->cameraOffset.z = static_cast<float>(visualsConfig.thirdpersonDistance); 
+    memory->input->cameraOffset.z = static_cast<float>(visualsConfig.thirdpersonDistance);
 }
 
 void Visuals::removeVisualRecoil(FrameStage stage) noexcept
@@ -491,7 +492,7 @@ void Visuals::hitEffect(GameEvent* event) noexcept
                 return effects[visualsConfig.hitEffect - 2];
             };
 
-           
+
             auto material = interfaces->materialSystem->findMaterial(getEffectMaterial());
             if (visualsConfig.hitEffect == 1)
                 material->findVar("$c0_x")->setValue(0.0f);
@@ -511,25 +512,37 @@ void Visuals::hitMarker(GameEvent* event, ImDrawList* drawList) noexcept
         return;
 
     static float lastHitTime = 0.0f;
+    static int lastHealthRemains = 0;
+    static int lastDmg = 0;
 
     if (event) {
         if (localPlayer && event->getInt("attacker") == localPlayer->getUserId())
+        {
             lastHitTime = memory->globalVars->realtime;
+            lastHealthRemains = event->getInt("health");
+            lastDmg = event->getInt("dmg_health");
+        }
         return;
     }
 
     if (lastHitTime + visualsConfig.hitMarkerTime < memory->globalVars->realtime)
         return;
 
+    const auto& mid = ImGui::GetIO().DisplaySize / 2.0f;
     switch (visualsConfig.hitMarker) {
-    case 1:
-        const auto& mid = ImGui::GetIO().DisplaySize / 2.0f;
-        constexpr auto color = IM_COL32(255, 255, 255, 255);
-        drawList->AddLine({ mid.x - 10, mid.y - 10 }, { mid.x - 4, mid.y - 4 }, color);
-        drawList->AddLine({ mid.x + 10.5f, mid.y - 10.5f }, { mid.x + 4.5f, mid.y - 4.5f }, color);
-        drawList->AddLine({ mid.x + 10.5f, mid.y + 10.5f }, { mid.x + 4.5f, mid.y + 4.5f }, color);
-        drawList->AddLine({ mid.x - 10, mid.y + 10 }, { mid.x - 4, mid.y + 4 }, color);
-        break;
+        case 1: {
+            constexpr auto color = IM_COL32(255, 255, 255, 255);
+            drawList->AddLine({ mid.x - 10, mid.y - 10 }, { mid.x - 4, mid.y - 4 }, color);
+            drawList->AddLine({ mid.x + 10.5f, mid.y - 10.5f }, { mid.x + 4.5f, mid.y - 4.5f }, color);
+            drawList->AddLine({ mid.x + 10.5f, mid.y + 10.5f }, { mid.x + 4.5f, mid.y + 4.5f }, color);
+            drawList->AddLine({ mid.x - 10, mid.y + 10 }, { mid.x - 4, mid.y + 4 }, color);
+            break;
+        }
+        case 2: {
+            std::string str = std::to_string(lastDmg) + '(' + std::to_string(lastHealthRemains) + ')';
+            drawList->AddText(nullptr, 16.0f, { mid.x, mid.y }, IM_COL32(255, 0, 0, 255), str.c_str());
+            break;
+        }
     }
 }
 
@@ -797,7 +810,8 @@ void Visuals::drawGUI(bool contentOnly) noexcept
     ImGui::Combo("Screen effect", &visualsConfig.screenEffect, "None\0Drone cam\0Drone cam with noise\0Underwater\0Healthboost\0Dangerzone\0");
     ImGui::Combo("Hit effect", &visualsConfig.hitEffect, "None\0Drone cam\0Drone cam with noise\0Underwater\0Healthboost\0Dangerzone\0");
     ImGui::SliderFloat("Hit effect time", &visualsConfig.hitEffectTime, 0.1f, 1.5f, "%.2fs");
-    ImGui::Combo("Hit marker", &visualsConfig.hitMarker, "None\0Default (Cross)\0");
+    ImGui::Combo("Hit marker", &visualsConfig.hitMarker, "None\0Default (Cross)\0Damage\0");
+    ImGuiCustom::colorPicker("Hit market color", visualsConfig.hitMarkerColor);
     ImGui::SliderFloat("Hit marker time", &visualsConfig.hitMarkerTime, 0.1f, 1.5f, "%.2fs");
     ImGuiCustom::colorPicker("Bullet Tracers", visualsConfig.bulletTracers.asColor4().color.data(), &visualsConfig.bulletTracers.asColor4().color[3], nullptr, nullptr, &visualsConfig.bulletTracers.enabled);
     ImGuiCustom::colorPicker("Molotov Hull", visualsConfig.molotovHull);
